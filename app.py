@@ -4,12 +4,11 @@ import pdfplumber
 import openai
 import nest_asyncio
 from pathlib import Path
-from utils import get_doc_tools
+from modules.helper import get_openai_api_key
+from modules.utils import get_doc_tools
 from llama_index.llms.openai import OpenAI
 from llama_index.core.agent import FunctionCallingAgentWorker
 from llama_index.core.agent import AgentRunner
-from llama_index.core import VectorStoreIndex
-from llama_index.core.objects import ObjectIndex
 
 # Apply nest_asyncio
 nest_asyncio.apply()
