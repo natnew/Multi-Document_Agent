@@ -9,9 +9,10 @@ sqlalchemy==1.4.41
 pdfplumber==0.7.5
 openai==0.27.0
 nest_asyncio==1.5.6
-llama_index==0.5.6  # Placeholder, adjust version according to actual package version used
-some_vector_library  # Placeholder, replace with the actual vector tool library used
-some_summary_library  # Placeholder, replace with the actual summary tool library used
+llama-index==0.5.6  # Replace with correct package name and version if different
+sentence-transformers==2.2.2  # Example vector tool library
+sumy==0.9.0  # Example summary tool library
+
 
 
 
