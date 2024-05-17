@@ -4,21 +4,6 @@ import pdfplumber
 import openai
 import nest_asyncio
 from pathlib import Path
-from llama_index.llms.openai import OpenAI
-from llama_index.core.agent import FunctionCallingAgentWorker
-from llama_index.core.agent import AgentRunner
-
-# Helper function to get OpenAI API key
-def get_openai_api_key():
-    return st.text_input("Enter your OpenAI API key:", type="password")
-
-# Helper function to get document tools
-def get_doc_tools(paper, stem):
-    with pdfplumber.open(paper) as pdf:
-        text = ''
-        for page in pdf.pages:
-            text += page.extract_text()
-    return text, text
 
 # Apply nest_asyncio
 nest_asyncio.apply()
@@ -26,7 +11,7 @@ nest_asyncio.apply()
 st.title('Streamlit App for Conversational PDF and CSV Interaction')
 
 # Input for OpenAI API key
-api_key = get_openai_api_key()
+api_key = st.text_input("Enter your OpenAI API key:", type="password")
 
 if api_key:
     openai.api_key = api_key
@@ -44,22 +29,24 @@ if api_key:
             with open(uploaded_file.name, "wb") as f:
                 f.write(uploaded_file.getbuffer())
 
-            paper = uploaded_file.name
-            vector_tool, summary_tool = get_doc_tools(paper, Path(paper).stem)
+            # Extract text from the PDF
+            with pdfplumber.open(uploaded_file.name) as pdf:
+                text = ""
+                for page in pdf.pages:
+                    text += page.extract_text()
 
-            llm = OpenAI(model="gpt-3.5-turbo")
-
-            agent_worker = FunctionCallingAgentWorker.from_tools(
-                [vector_tool, summary_tool],
-                llm=llm,
-                verbose=True
-            )
-            agent = AgentRunner(agent_worker)
+            def chat_with_pdf(text, query):
+                response = openai.Completion.create(
+                    engine="gpt-4-turbo",
+                    prompt=f"The following is the text extracted from a PDF document:\n{text}\n\nUser query: {query}\n\nAnswer:",
+                    max_tokens=150
+                )
+                return response.choices[0].text.strip()
 
             user_query = st.text_input("Ask something about the paper:")
             if user_query:
-                response = agent.query(user_query)
-                st.write(str(response))
+                response = chat_with_pdf(text, user_query)
+                st.write(response)
 
         elif uploaded_file.type == "text/csv":
             st.write("CSV File Details:", file_details)
@@ -70,11 +57,9 @@ if api_key:
             # Save the dataframe as a string for interaction
             data_str = data.to_string()
 
-            llm = OpenAI(model="gpt-3.5-turbo")
-
-            def chat_with_data(data_str, query):
+            def chat_with_csv(data_str, query):
                 response = openai.Completion.create(
-                    engine="text-davinci-003",
+                    engine="gpt-4-turbo",
                     prompt=f"The following is a CSV data:\n{data_str}\n\nUser query: {query}\n\nAnswer:",
                     max_tokens=150
                 )
@@ -82,7 +67,7 @@ if api_key:
 
             user_query = st.text_input("Ask something about the data:")
             if user_query:
-                response = chat_with_data(data_str, user_query)
+                response = chat_with_csv(data_str, user_query)
                 st.write(response)
 
     else:
