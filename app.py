@@ -4,11 +4,21 @@ import pdfplumber
 import openai
 import nest_asyncio
 from pathlib import Path
-from modules.helper import get_openai_api_key
-from modules.utils import get_doc_tools
 from llama_index.llms.openai import OpenAI
 from llama_index.core.agent import FunctionCallingAgentWorker
 from llama_index.core.agent import AgentRunner
+
+# Helper function to get OpenAI API key
+def get_openai_api_key():
+    return st.text_input("Enter your OpenAI API key:", type="password")
+
+# Helper function to get document tools
+def get_doc_tools(paper, stem):
+    with pdfplumber.open(paper) as pdf:
+        text = ''
+        for page in pdf.pages:
+            text += page.extract_text()
+    return text, text
 
 # Apply nest_asyncio
 nest_asyncio.apply()
@@ -16,7 +26,7 @@ nest_asyncio.apply()
 st.title('Streamlit App for Conversational PDF and CSV Interaction')
 
 # Input for OpenAI API key
-api_key = st.text_input("Enter your OpenAI API key:", type="password")
+api_key = get_openai_api_key()
 
 if api_key:
     openai.api_key = api_key
