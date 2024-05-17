@@ -1,17 +1,12 @@
-streamlit==1.12.0
-pandas==1.5.3
-numpy==1.23.5
-matplotlib==3.6.3
-scikit-learn==1.2.0
-requests==2.28.1
-plotly==5.11.0
-sqlalchemy==1.4.41
-pdfplumber==0.7.5
+streamlit==1.14.0
+pandas==1.4.2
+pdfplumber==0.5.28
 openai==0.27.0
-nest_asyncio==1.5.6
-llama-index==0.5.6  # Replace with correct package name and version if different
-sentence-transformers==2.2.2  # Example vector tool library
-sumy==0.9.0  # Example summary tool library
+nest-asyncio==1.5.5
+llama-index==0.5.0
+plotly==5.6.0
+matplotlib==3.5.1
+pathlib==1.0.1
 
 
 
