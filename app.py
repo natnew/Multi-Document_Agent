@@ -13,7 +13,7 @@ from llama_index.core.agent import AgentRunner
 # Apply nest_asyncio
 nest_asyncio.apply()
 
-st.title('Streamlit App for Conversational PDF Interaction')
+st.title('Streamlit App for Conversational PDF and CSV Interaction')
 
 # Input for OpenAI API key
 api_key = st.text_input("Enter your OpenAI API key:", type="password")
@@ -26,61 +26,55 @@ if api_key:
 
     if uploaded_file is not None:
         file_details = {"FileName": uploaded_file.name, "FileType": uploaded_file.type}
-        
+
         if uploaded_file.type == "application/pdf":
             st.write("PDF File Details:", file_details)
-            
+
             # Save the uploaded PDF
             with open(uploaded_file.name, "wb") as f:
                 f.write(uploaded_file.getbuffer())
-            
+
             paper = uploaded_file.name
             vector_tool, summary_tool = get_doc_tools(paper, Path(paper).stem)
-            
+
             llm = OpenAI(model="gpt-3.5-turbo")
-            
+
             agent_worker = FunctionCallingAgentWorker.from_tools(
-                [vector_tool, summary_tool], 
-                llm=llm, 
+                [vector_tool, summary_tool],
+                llm=llm,
                 verbose=True
             )
             agent = AgentRunner(agent_worker)
-            
+
             user_query = st.text_input("Ask something about the paper:")
             if user_query:
                 response = agent.query(user_query)
                 st.write(str(response))
-        
+
         elif uploaded_file.type == "text/csv":
             st.write("CSV File Details:", file_details)
-            
+
             # Read the CSV file into a DataFrame
             data = pd.read_csv(uploaded_file)
-            
-            # Display the dataframe
-            st.write("Dataframe:")
-            st.dataframe(data)
-            
-            # Display basic statistics
-            st.write("Basic Statistics:")
-            st.write(data.describe())
-            
-            # Display a line chart
-            st.write("Line Chart:")
-            st.line_chart(data)
-            
-            # Display a bar chart using Plotly
-            st.write("Bar Chart:")
-            import plotly.express as px
-            fig = px.bar(data, x=data.columns[0], y=data.columns[1])
-            st.plotly_chart(fig)
-            
-            # Display a matplotlib plot
-            st.write("Histogram:")
-            import matplotlib.pyplot as plt
-            fig, ax = plt.subplots()
-            ax.hist(data[data.columns[1]], bins=20)
-            st.pyplot(fig)
+
+            # Save the dataframe as a string for interaction
+            data_str = data.to_string()
+
+            llm = OpenAI(model="gpt-3.5-turbo")
+
+            def chat_with_data(data_str, query):
+                response = openai.Completion.create(
+                    engine="text-davinci-003",
+                    prompt=f"The following is a CSV data:\n{data_str}\n\nUser query: {query}\n\nAnswer:",
+                    max_tokens=150
+                )
+                return response.choices[0].text.strip()
+
+            user_query = st.text_input("Ask something about the data:")
+            if user_query:
+                response = chat_with_data(data_str, user_query)
+                st.write(response)
+
     else:
         st.write("Please upload a CSV or PDF file to get started.")
 else:
