@@ -2,7 +2,7 @@
 
 Building Agentic RAG with Llamaindex
 
-This is the repo to build a Building a Multi-Document Agent
+This is a repo to build a Building a Multi-Document Agent
 
 # Setup
 - install the requirements from requirements.txt
