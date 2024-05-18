@@ -1,8 +1,6 @@
-streamlit==1.14.0
-pandas==1.4.2
-pdfplumber==0.5.28
-openai==0.27.0
-nest-asyncio==1.5.5
+streamlit==1.18.1
+llama-index==0.6.10  # Adjust the version if necessary
+openai==0.27.1       # Ensure compatibility with llama-index
 
 
 
