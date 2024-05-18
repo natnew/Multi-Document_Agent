@@ -1,84 +1,57 @@
 import streamlit as st
-import pandas as pd
-import pdfplumber
-import openai
-import nest_asyncio
-import asyncio  # Import asyncio module
 from pathlib import Path
+from llama_index.llms.openai import OpenAI
+from llama_index.core.agent import FunctionCallingAgentWorker, AgentRunner
+from utils import get_doc_tools
 
-# Ensure an event loop is available
-if not asyncio.get_event_loop().is_running():
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
+# Define URLs and papers
+urls = [
+    "https://openreview.net/pdf?id=VtmBAGCN7o",
+    "https://openreview.net/pdf?id=6PmJoRfdaK",
+    "https://openreview.net/pdf?id=hSyW5go0v8",
+]
 
-# Apply nest_asyncio
-nest_asyncio.apply()
+papers = [
+    "metagpt.pdf",
+    "longlora.pdf",
+    "selfrag.pdf",
+]
 
-st.title('Streamlit App for Conversational PDF and CSV Interaction')
+# Fetch tools for each paper
+paper_to_tools_dict = {}
+for paper in papers:
+    st.write(f"Getting tools for paper: {paper}")
+    vector_tool, summary_tool = get_doc_tools(paper, Path(paper).stem)
+    paper_to_tools_dict[paper] = [vector_tool, summary_tool]
 
-# Input for OpenAI API key
-api_key = st.text_input("Enter your OpenAI API key:", type="password")
+# Initialize tools and LLM
+initial_tools = [t for paper in papers for t in paper_to_tools_dict[paper]]
+llm = OpenAI(model="gpt-3.5-turbo")
 
-if api_key:
-    openai.api_key = api_key
+# Create agent
+agent_worker = FunctionCallingAgentWorker.from_tools(
+    initial_tools, 
+    llm=llm, 
+    verbose=True
+)
+agent = AgentRunner(agent_worker)
 
-    # File uploader for CSV or PDF files
-    uploaded_file = st.file_uploader("Choose a CSV or PDF file", type=["csv", "pdf"])
+# Streamlit app layout
+st.title("Paper Analysis App")
 
-    if uploaded_file is not None:
-        file_details = {"FileName": uploaded_file.name, "FileType": uploaded_file.type}
+query1 = st.text_input("Enter your first query:", 
+                       "Tell me about the evaluation dataset used in LongLoRA, and then tell me about the evaluation results")
+query2 = st.text_input("Enter your second query:", 
+                       "Give me a summary of both Self-RAG and LongLoRA")
 
-        if uploaded_file.type == "application/pdf":
-            st.write("PDF File Details:", file_details)
+if st.button("Run Queries"):
+    response1 = agent.query(query1)
+    response2 = agent.query(query2)
+    
+    st.subheader("Response to First Query")
+    st.write(str(response1))
+    
+    st.subheader("Response to Second Query")
+    st.write(str(response2))
 
-            # Save the uploaded PDF
-            with open(uploaded_file.name, "wb") as f:
-                f.write(uploaded_file.getbuffer())
-
-            # Extract text from the PDF
-            with pdfplumber.open(uploaded_file.name) as pdf:
-                text = ""
-                for page in pdf.pages:
-                    text += page.extract_text()
-
-            def chat_with_pdf(text, query):
-                response = openai.Completion.create(
-                    engine="gpt-4-turbo",
-                    prompt=f"The following is the text extracted from a PDF document:\n{text}\n\nUser query: {query}\n\nAnswer:",
-                    max_tokens=150
-                )
-                return response.choices[0].text.strip()
-
-            user_query = st.text_input("Ask something about the paper:")
-            if user_query:
-                response = chat_with_pdf(text, user_query)
-                st.write(response)
-
-        elif uploaded_file.type == "text/csv":
-            st.write("CSV File Details:", file_details)
-
-            # Read the CSV file into a DataFrame
-            data = pd.read_csv(uploaded_file)
-
-            # Save the dataframe as a string for interaction
-            data_str = data.to_string()
-
-            def chat_with_csv(data_str, query):
-                response = openai.Completion.create(
-                    engine="gpt-4-turbo",
-                    prompt=f"The following is a CSV data:\n{data_str}\n\nUser query: {query}\n\nAnswer:",
-                    max_tokens=150
-                )
-                return response.choices[0].text.strip()
-
-            user_query = st.text_input("Ask something about the data:")
-            if user_query:
-                response = chat_with_csv(data_str, user_query)
-                st.write(response)
-
-    else:
-        st.write("Please upload a CSV or PDF file to get started.")
-else:
-    st.write("Please enter your OpenAI API key to proceed.")
-
-st.write("### Thank you for using this app!")
+# Run the app with `streamlit run app.py`
