@@ -3,7 +3,13 @@ import pandas as pd
 import pdfplumber
 import openai
 import nest_asyncio
+import asyncio  # Import asyncio module
 from pathlib import Path
+
+# Ensure an event loop is available
+if not asyncio.get_event_loop().is_running():
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
 
 # Apply nest_asyncio
 nest_asyncio.apply()
