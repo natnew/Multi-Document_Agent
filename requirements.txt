@@ -1,6 +1,8 @@
 streamlit==1.18.1
-llama-index==0.6.10  # Adjust the version if necessary
-openai==0.27.1       # Ensure compatibility with llama-index
+llama-index==0.6.10
+openai==0.27.1
+requests==2.28.1
+
 
 
 
